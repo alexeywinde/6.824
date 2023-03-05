@@ -26,6 +26,14 @@ import (
 	"6.824/labrpc"
 )
 
+type AppendEntry struct{
+	term int
+	leaderId int
+	prevLogIndex int
+	prevLogTerm int
+	entrys []string
+	leaderCommit int
+}
 
 //
 // as each Raft peer becomes aware that successive log entries are
@@ -63,6 +71,15 @@ type Raft struct {
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
 	// state a Raft server must maintain.
+	currentTerm int
+	votedFor int
+	log []map[int]interface{}
+	
+	commitIndex int
+	lastApplied int
+
+	nextIndex []int
+	matchIndex []int
 
 }
 
@@ -73,6 +90,11 @@ func (rf *Raft) GetState() (int, bool) {
 	var term int
 	var isleader bool
 	// Your code here (2A).
+	term=rf.term
+	RaftState:=rf.persister.ReadRaftState()
+	if string(RaftState)=="Leader"{
+		isLeader=true
+	}
 	return term, isleader
 }
 
@@ -143,6 +165,10 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 //
 type RequestVoteArgs struct {
 	// Your data here (2A, 2B).
+	Term int
+	CandidateId int
+	LastLogIndex int
+	LastLogTerm int
 }
 
 //
@@ -151,6 +177,8 @@ type RequestVoteArgs struct {
 //
 type RequestVoteReply struct {
 	// Your data here (2A).
+	Term int
+	VoteGranted bool
 }
 
 //
@@ -158,6 +186,13 @@ type RequestVoteReply struct {
 //
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
+	
+	if args.Term<rf.currentTerm {
+		reply.VotedGranted=false
+	}
+	if rf.votedFor==nil||rf.votedFor==args.CandidateId{
+		
+	}
 }
 
 //
@@ -215,7 +250,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	isLeader := true
 
 	// Your code here (2B).
-
+	_,isLeader =rf.GetState()
 
 	return index, term, isLeader
 }
@@ -249,7 +284,19 @@ func (rf *Raft) ticker() {
 		// Your code here to check if a leader election should
 		// be started and to randomize sleeping time using
 		// time.Sleep().
-
+		time.Sleep()
+	}
+	voteCount:=0
+	for i:=1;i++;i<=len(rf.peer){
+		if i==rf.me{
+			continue
+		}
+		arg:=RequestVoteArgs{}
+		arg.Term=rf.CurrentTerm
+		go rf.sendRequestVote(i,&arg,&reply)
+		if reply.VotedGranted==true{
+			voteCount++
+		}
 	}
 }
 
@@ -272,7 +319,9 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.me = me
 
 	// Your initialization code here (2A, 2B, 2C).
-
+	rf.dead=0
+	applyrcvr:= <-applych
+	rf.peers[me].endname=
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
 

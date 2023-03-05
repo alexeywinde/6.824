@@ -23,7 +23,16 @@ type ExampleReply struct {
 }
 
 // Add your RPC definitions here.
-
+type TaskReply struct {
+	task string
+	tasknumber int
+	filename string
+	m int
+	r int
+}
+type TaskArgs struct{
+	task string
+}
 
 // Cook up a unique-ish UNIX-domain socket name
 // in /var/tmp, for the coordinator.
